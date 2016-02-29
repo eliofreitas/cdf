@@ -83,7 +83,7 @@ define([
       executeAtStart: true,
       myFunction: function() {}
     });
-  
+
     var uhello = new HelloUnmanagedComponent({
       name: "uhello",
       type: "HelloUnmanaged",
@@ -91,7 +91,7 @@ define([
       executeAtStart: true,
       myFunction: function() {}
     });
-  
+
     var mquery = new HelloQueryBaseComponent({
       name: "mquery",
       type: "HelloQueryBase",
@@ -99,15 +99,8 @@ define([
       executeAtStart: true,
       queryDefinition: {dataSource: "fakeQuery"}
     });
-  
-    var uquery = new HelloQueryUnmanagedComponent({
-      name: "uquery",
-      type: "HelloQueryUnmanaged",
-      htmlObject: 'uquery',
-      executeAtStart: true,
-      queryDefinition: {dataSource: "fakeQuery"}
-    });
 
+    var uquery;
     var uqueryWithParams = new HelloQueryUnmanagedComponent({
       name: "uqueryWithParams",
       type: "HelloQueryUnmanaged",
@@ -120,12 +113,22 @@ define([
         "MYPARAM3": "myparam3"
       }
     });
-
+    function renewUquery(){
+      return new HelloQueryUnmanagedComponent({
+        name: "uquery",
+        type: "HelloQueryUnmanaged",
+        htmlObject: 'uquery',
+        executeAtStart: true,
+        queryDefinition: {dataSource: "fakeQuery"}
+       });
+      };
     beforeEach(function() {
       dashboard = new Dashboard();
       dashboard.init();
+      uquery = renewUquery();
       dashboard.addComponents([mhello, uhello, mquery, uquery, uqueryWithParams]);
       dashboard.addDataSource("fakeQuery", {dataAccessId: "1", path: "/test/path"});
+
     });
 
     /**
@@ -219,10 +222,85 @@ define([
     });
 
     /**
+     * ## Unmanaged Component # should allow changes in the datasources
+     */
+    it("should allow changes in the datasources", function(done) {
+      spyOn(uquery.dashboard,'isValidQueryDefinition').and.returnValue(true);
+      uquery.preExecution = function () {
+        this.queryDefinition.dataSource = "otherDatasource";
+      };
+      uquery._setQuery = function (queryDef, queryOptions) {
+        expect(queryDef.dataSource).toBe("otherDatasource");
+        done();
+      };
+      dashboard.update(uquery);
+    });
+
+    /**
+     * ## Unmanaged Component # should allow changes in the datasources by override
+     */
+    it("should allow changes  in the datasources by override", function(done) {
+      spyOn(uquery.dashboard,'isValidQueryDefinition').and.returnValue(true);
+      uquery.preExecution = function () {
+        this.queryDefinition = $.extend( {}, this.queryDefinition , { dataSource: "otherDatasource"});
+      };
+      uquery._setQuery = function (queryDef, queryOptions) {
+        expect(queryDef.dataSource).toBe("otherDatasource");
+        done();
+      };
+      dashboard.update(uquery);
+     });
+
+    /**
+     * ## Unmanaged Component # should allow changes in the datasources by merge
+     */
+    it("should allow changes datasources by  merge", function(done) {
+      spyOn(uquery.dashboard,'isValidQueryDefinition').and.returnValue(true);
+      uquery.preExecution = function () {
+        this.queryDefinition = $.extend( this.queryDefinition , { dataSource: "otherDatasource"});
+      };
+      uquery._setQuery = function (queryDef, queryOptions) {
+        expect(queryDef.dataSource).toBe("otherDatasource");
+        done();
+      };
+      dashboard.update(uquery);
+    });
+
+    /**
+     * ## Unmanaged Component # should recognize a function as a datasource if defined directly
+     */
+    it("should recognize a function as a datasource if defined directly", function(done) {
+      spyOn(uquery.dashboard,'isValidQueryDefinition').and.returnValue(true);
+      getQueryDef = function () { return { dataSource: "otherDatasource"}; };
+      uquery.preExecution = function () {
+        uquery = $.extend( uquery , {getQueryDefinition : getQueryDef });
+      };
+      uquery._setQuery = function (queryDef, queryOptions) {
+        expect(queryDef.dataSource).toBe("otherDatasource");
+        done();
+      };
+      dashboard.update(uquery);
+     });
+
+    /**
+     * ## Unmanaged Component # should recognize a function as a datasource if defined in a property
+     */
+    it(" should recognize a function as a datasource if defined in a property", function(done) {
+      spyOn(uquery.dashboard,'isValidQueryDefinition').and.returnValue(true);
+      uquery.preExecution = function () {
+        uquery.getQueryDefinition = function () { return { dataSource: "otherDatasource"}; };
+      };
+      uquery._setQuery = function (queryDef, queryOptions) {
+        expect(queryDef.dataSource).toBe("otherDatasource");
+        done();
+      };
+      dashboard.update(uquery);
+     });
+
+    /**
      * ## Unmanaged Component # getSuccessHandler
      */
     describe("getSuccessHandler", function() {
-
       /**
        * ## Unmanaged Component # getSuccessHandler # returns a callback function that returns the processed data after calling postFetch on a successful data request
        */

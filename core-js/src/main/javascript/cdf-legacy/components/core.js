@@ -995,7 +995,7 @@ var UnmanagedComponent = BaseComponent.extend({
     var handler = this.getSuccessHandler(success, always),
         errorHandler = this.getErrorHandler();
 
-    var query = this.queryState = this.query = Dashboards.getQuery( queryDef);
+    var query = this.queryState = this.query = Dashboards.getQuery(this._resolveQueryDefinition(queryDef));
     var ajaxOptions = {
       async: true
     }
@@ -1007,6 +1007,41 @@ var UnmanagedComponent = BaseComponent.extend({
       query.setPageSize(userQueryOptions.pageSize);
     }
     query.fetchData(this.parameters, handler, errorHandler);
+  },
+
+  /**
+   * @summary Resolves the correct queryDefinition.
+   * @description <p>Resolves the correct queryDefinition, always defaulting to undefined.</p>
+   *
+   * @param {Object|Function} queryDef The query definition object or a getter function.
+   * @return {Object} The resolved queryDefinition object.
+   * @private
+   */
+  _resolveQueryDefinition: function(queryDef) {
+    var queryDefinition;
+    if(_.isFunction(this.getQueryDefinition)) {
+      queryDefinition = this.getQueryDefinition();
+    }
+    return this._isValidQueryDefinition(queryDefinition) ?
+        queryDefinition : (_.isFunction(queryDef) ? queryDef() : queryDef);
+  },
+
+  _isValidQueryDefinition: function (queryDef) {
+    return _.isObject(queryDef) && !_.isArray(queryDef) && !_.isEmpty(queryDef);
+  },
+
+  /**
+   * @summary Gets the queryDefinition object or undefined.
+   * @description <p>Gets the queryDefinition object or undefined.</p>
+   *
+   * @return {Object} The queryDefinition Object.
+   */
+  getQueryDefinition: function() {
+    if(!!this.queryDefinition) {
+      return this.queryDefinition;
+    } else if (!!this.chartDefinition) {
+      return this.chartDefinition;
+    }
   },
 
   /*

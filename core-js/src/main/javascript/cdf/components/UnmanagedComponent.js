@@ -216,6 +216,20 @@ define([
     //priority: 5,
 
     /**
+     * @summary The queryDefinition Object.
+     * @description The queryDefinition Object.
+     *
+     * @type {object}
+     */
+     queryDefinition: undefined,
+    /**
+     * @summary The chartDefinition Object.
+     * @description The chartDefinition Object.
+     *
+     * @type {object}
+     */
+     chartDefinition: undefined,
+    /**
      * @summary Handles calling `preExecution` when it exists.
      * @description <p>Handles calling `preExecution` when it exists.</p> 
      *              <p>All components extending UnmanagedComponent should either use one
@@ -481,8 +495,7 @@ define([
      */
     beginQuery: function(queryDef, callback, queryOptions) {
       this.execute(function() {
-        var query = this._setQuery(queryDef, queryOptions);
-
+        var query = this._setQuery(this._resolveQueryDefinition(queryDef), queryOptions);
         // `getSuccessHandler`:
         // * if this execution is subsumed by a following one, only calls `maybeUnlock`; `endExec` will not be called by _this_ execution
         // * calls postFetch with the results from `query.fetchData`
@@ -493,6 +506,37 @@ define([
           this.getSuccessHandler(callback, undefined, this._maybeUnblock),
           this.getErrorHandler());
       });
+    },
+
+    /**
+     * @summary Resolves the correct queryDefinition.
+     * @description <p>Resolves the correct queryDefinition, always defaulting to {@link cdf.components.UnmanagedComponent#queryDefinition|queryDefinition}.</p>
+     *
+     * @param {Object|Function} queryDef The query definition object or a getter function.
+     * @return {Object} The resolved queryDefinition object.
+     * @private
+     */
+    _resolveQueryDefinition: function(queryDef) {
+      var queryDefinition;
+      if(_.isFunction(this.getQueryDefinition)) {
+        queryDefinition = this.getQueryDefinition();
+      }
+      return this.dashboard.isValidQueryDefinition(queryDefinition) ?
+            queryDefinition : (_.isFunction(queryDef) ? queryDef() : queryDef);
+    },
+
+    /**
+     * @summary Gets the queryDefinition object or undefined.
+     * @description <p>Gets the queryDefinition object or undefined.</p>
+     *
+     * @return {Object} The queryDefinition Object.
+     */
+    getQueryDefinition: function() {
+      if(!!this.queryDefinition) {
+        return this.queryDefinition;
+      } else if (!!this.chartDefinition) {
+        return this.chartDefinition;
+      }
     },
 
     /**
