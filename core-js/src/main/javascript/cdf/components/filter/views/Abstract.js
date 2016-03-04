@@ -193,6 +193,9 @@ define([
           }).off('scrollreachtop').on('scrollreachtop', function (event) {
             return that.trigger('scroll:reached:top', that.model, event);
           }).data('optiscroll');
+          this._scrollToPosition = function (position) {
+            this._scrollBar.scrollIntoView(position);
+          };
           break;
         case 'mCustomScrollbar':
           var options = $.extend(true, {}, this.config.view.scrollbar.options, {
@@ -206,6 +209,9 @@ define([
             }
           });
           this._scrollBar = this.$(this.config.view.slots.children).parent().mCustomScrollbar(options);
+          this._scrollToPosition = function (position) {
+            this._scrollBar.mCustomScrollbar("scrollTo",position)
+          };
       }
       if (this.config.options.isResizable) {
         var $container = this.$(this.config.view.slots.children).parent();
@@ -219,10 +225,14 @@ define([
     },
     setScrollBarAt: function ($tgt) {
       if (this._scrollBar != null) {
-        this._scrollBar.scrollIntoView($tgt);
+        this._scrollToPosition($tgt);
       }
       return this;
     },
+    /**
+     * function to be overridden by addScrollBar depending on the scrollbar engine 
+     */
+    _scrollToPosition: function (Position){},
 
     /*
      * Events triggered by the user

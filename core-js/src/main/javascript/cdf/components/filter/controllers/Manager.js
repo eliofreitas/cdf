@@ -210,13 +210,17 @@ define([
      * Pagination
      */
     getNextPage: function(model, event) {
-      var ref;
-      this.previousPosition = (ref = _.last(this.sortChildren(this.children()), 2)[0]) != null ? ref.get('view').$el : void 0;
+      var listOfChildren = this._listChildren(this.children());
+      var sortedChildren = this.sortChildren(listOfChildren);
+      var penultimateChild = _.last(sortedChildren, 2)[0];
+      this.previousPosition = penultimateChild != null ? penultimateChild.target : undefined;
       return this.getPage('next', model, event);
     },
     getPreviousPage: function(model, event) {
-      var ref;
-      this.previousPosition = (ref = _.first(this.sortChildren(this.children()), 2)[1]) != null ? ref.get('view').$el : void 0;
+      var listOfChildren = this._listChildren(this.children());
+      var sortedChildren = this.sortChildren(listOfChildren);
+      var penultimateChild = _.last(sortedChildren, 2)[1];
+      this.previousPosition = penultimateChild != null ? penultimateChild.target : undefined;
       return this.getPage('previous', model, event);
     },
     getPage: function(page, model, event) {
@@ -355,14 +359,14 @@ define([
 
       return this;
     },
-    _detachChildren: function() {
+    _listChildren: function() {
       var children;
       if (this.children()) {
         children = this.children().map(function(child) {
           var result;
           result = {
             item: child,
-            target: child.get('view').$el.detach()
+            target: child.get('view').$el
           };
           return result;
         });
@@ -370,6 +374,13 @@ define([
         children = null;
       }
       return children;
+    },
+    _detachChildren: function(){
+        var list = this._listChildren();
+        list.forEach(function(obj){
+            obj.target.detach();
+        });
+        return list;
     },
     _appendChildren: function(children) {
       if (children != null) {
